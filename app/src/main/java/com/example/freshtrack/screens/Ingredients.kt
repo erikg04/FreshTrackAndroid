@@ -1,32 +1,31 @@
 package com.example.freshtrack.screens
 
-
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddIngredientsScreen() {
     var searchQuery by remember { mutableStateOf("") }
 
-    // Replace this with your real ingredient list or Firestore data later
+    // Replace with your real data later
     val allIngredients = listOf(
         "Tomato", "Onion", "Garlic", "Milk", "Egg", "Cheese",
         "Carrot", "Chicken", "Lettuce", "Spinach", "Butter", "Yogurt"
     )
-
-    // Filter the ingredients based on search query
     val filteredIngredients = allIngredients.filter {
         it.contains(searchQuery, ignoreCase = true)
     }
 
     Column(
-        modifier = Modifier
+        Modifier
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -36,8 +35,19 @@ fun AddIngredientsScreen() {
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            label = { Text("Search") },
-            modifier = Modifier.fillMaxWidth()
+            placeholder = { Text("Type to search…") },
+            singleLine = true,
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                cursorColor = MaterialTheme.colorScheme.primary,
+                focusedBorderColor = Color.Transparent,
+                unfocusedBorderColor = Color.Transparent,
+                disabledBorderColor = Color.Transparent
+            )
         )
 
         Divider()
@@ -56,4 +66,3 @@ fun AddIngredientsScreen() {
         }
     }
 }
-

@@ -28,6 +28,7 @@ import com.example.freshtrack.ui.theme.FreshTrackTheme
 import android.widget.Toast
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.freshtrack.screens.BarcodeScannerScreen
+import com.example.freshtrack.ui.components.BackgroundImage
 
 
 
@@ -45,7 +46,7 @@ class MainActivity : ComponentActivity() {
                 var isLoggedIn by remember { mutableStateOf(AuthManager.isUserLoggedIn()) }
 
                 if (isLoggedIn) {
-                    FreshTrackApp()
+                    FreshTrackApp() // ✅ Only shows app if user is logged in
                 } else {
                     SignInScreen(
                         onSignIn = { email, password ->
@@ -79,7 +80,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-        /**
+/**
  * Defines the screens for the bottom nav.
  * I added a Scan screen for the plus icon.
  */
@@ -101,26 +102,35 @@ sealed class Screen(val route: String, val title: String, val icon: androidx.com
 @Composable
 fun FreshTrackApp() {
     val navController = rememberNavController()
-    Scaffold(
-        bottomBar = {
-            BottomNavigationBar(navController = navController, onScanClick = {
-                // TODO: Barcode scanner
-            })
-        }
-    ) { paddingValues ->
-        NavHost(
-            navController = navController,
-            startDestination = Screen.Home.route,
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            composable(Screen.Home.route) { HomeScreen(navController) }
-            composable(Screen.Profile.route) { ProfileScreen() }
-            composable(Screen.Scan.route) { BarcodeScannerScreen()}
-            composable(Screen.Ingredients.route) { AddIngredientsScreen() }
-            composable(Screen.Settings.route) { SettingsScreen() }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        // draws your full‑screen JPG/PNG pattern
+        BackgroundImage()
+
+        Scaffold(
+            // make the background just a bit translucent so pattern peeks through
+            containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.85f),
+            bottomBar = {
+                BottomNavigationBar(navController = navController, onScanClick = {
+                    // TODO: Barcode scanner
+                })
+            }
+        ) { paddingValues ->
+            NavHost(
+                navController = navController,
+                startDestination = Screen.Home.route,
+                modifier = Modifier.padding(paddingValues)
+            ) {
+                composable(Screen.Home.route) { HomeScreen(navController) }
+                composable(Screen.Profile.route) { ProfileScreen() }
+                composable(Screen.Scan.route) { BarcodeScannerScreen() }
+                composable(Screen.Ingredients.route) { AddIngredientsScreen() }
+                composable(Screen.Settings.route) { SettingsScreen() }
+            }
         }
     }
 }
+
 
 
 
@@ -155,9 +165,3 @@ fun BottomNavigationBar(navController: NavHostController, onScanClick: () -> Uni
         }
     }
 }
-
-
-
-
-
-
