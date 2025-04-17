@@ -45,6 +45,8 @@ android {
 
 dependencies {
     implementation(libs.firebase.firestore.ktx)
+    implementation(libs.androidx.monitor)
+    implementation(libs.androidx.junit.ktx)
     // Compose BOM 2023.10.00 (or newer) includes Compose Compiler 1.5.3
     val composeBom = platform("androidx.compose:compose-bom:2023.10.00")
     implementation(composeBom)
