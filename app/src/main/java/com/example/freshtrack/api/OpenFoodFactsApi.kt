@@ -34,12 +34,12 @@ object OpenFoodFactsApi {
 
                 ProductData(
                     barcode = barcode,
-                    name = product.optString("product_name", "Unknown"),
+                    name = product.optString("product_name",  "Unknown"),
                     brand = product.optString("brands", "Unknown"),
                     ingredients = product.optString("ingredients_text", ""),
                     allergens = product.optJSONArray("allergens_tags")?.let {
-                        List(it.length()) { i -> it.getString(i) }
-                    } ?: emptyList(),
+                        List(it.length()) { i -> it.getString(i) }.joinToString(", ")
+                    } ?: "",
                     category = product.optString("categories", ""),
                     quantity = product.optString("quantity", "")
                 )
@@ -52,11 +52,13 @@ object OpenFoodFactsApi {
 }
 
 data class ProductData(
-    val barcode: String,
-    val name: String,
-    val brand: String,
-    val ingredients: String,
-    val allergens: List<String>,
-    val category: String,
-    val quantity: String
+    val name: String = "",
+    val brand: String = "",
+    val allergens: String = "",
+    val barcode: String = "",
+    val ingredients: String = "",
+    val category: String = "",
+    val quantity: String = ""
 )
+
+

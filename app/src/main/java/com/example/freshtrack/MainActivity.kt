@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
                 var isLoggedIn by remember { mutableStateOf(AuthManager.isUserLoggedIn()) }
 
                 if (isLoggedIn) {
-                    FreshTrackApp() // ✅ Only shows app if user is logged in
+                    FreshTrackApp()
                 } else {
                     SignInScreen(
                         onSignIn = { email, password ->

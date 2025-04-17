@@ -1,6 +1,7 @@
 package com.example.freshtrack.screens
 
 import android.Manifest
+import android.app.Activity
 import android.content.pm.PackageManager
 import android.util.Log
 import android.view.ViewGroup
@@ -13,16 +14,11 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
@@ -31,16 +27,11 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
-import androidx.compose.foundation.layout.FlowRow
 import com.example.freshtrack.api.OpenFoodFactsApi
 import com.example.freshtrack.api.ProductData
+import com.example.freshtrack.ui.components.OverlayView
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
-
-
-
-
-
 
 @OptIn(ExperimentalGetImage::class)
 @Composable
@@ -48,9 +39,9 @@ fun BarcodeScannerScreen() {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scannedCode = remember { mutableStateOf<String?>(null) }
+    val scannedProduct = remember { mutableStateOf<ProductData?>(null) }
     var manualModeEnabled by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         if (!manualModeEnabled) {
@@ -68,7 +59,7 @@ fun BarcodeScannerScreen() {
                         )
                     }
 
-                    val overlayView = com.example.freshtrack.ui.components.OverlayView(ctx).apply {
+                    val overlayView = OverlayView(ctx).apply {
                         layoutParams = FrameLayout.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.MATCH_PARENT
@@ -82,7 +73,7 @@ fun BarcodeScannerScreen() {
                         != PackageManager.PERMISSION_GRANTED
                     ) {
                         ActivityCompat.requestPermissions(
-                            (ctx as android.app.Activity),
+                            (ctx as Activity),
                             arrayOf(Manifest.permission.CAMERA),
                             0
                         )
@@ -112,20 +103,21 @@ fun BarcodeScannerScreen() {
 
                                     scanner.process(image)
                                         .addOnSuccessListener { barcodes ->
-                                        for (barcode in barcodes) {
-                                            barcode.rawValue?.let { scannedValue ->
-                                                scannedCode.value = scannedValue
-                                                Log.d("SCANNER", "Scanned: $scannedValue")
+                                            for (barcode in barcodes) {
+                                                barcode.rawValue?.let { scannedValue ->
+                                                    scannedCode.value = scannedValue
+                                                    Log.d("SCANNER", "Scanned: $scannedValue")
 
-                                                coroutineScope.launch {
-                                                    val product = OpenFoodFactsApi.fetchProductByBarcode(scannedValue)
-                                                    product?.let {
-                                                        saveProductToFirestore(it)
-                                                    } ?: Log.d("SCANNER", "Product not found")
+                                                    coroutineScope.launch {
+                                                        val product = OpenFoodFactsApi.fetchProductByBarcode(scannedValue)
+                                                        product?.let {
+                                                            saveProductToFirestore(it)
+                                                            scannedProduct.value = it
+                                                        } ?: Log.d("SCANNER", "Product not found")
+                                                    }
                                                 }
                                             }
                                         }
-                                    }
                                         .addOnFailureListener {
                                             Log.e("SCANNER", "Error: ${it.message}")
                                         }
@@ -168,7 +160,22 @@ fun BarcodeScannerScreen() {
                 style = MaterialTheme.typography.bodyLarge
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            scannedProduct.value?.let { product ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(8.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Product: ${product.name}", style = MaterialTheme.typography.titleMedium)
+                        Text("Brand: ${product.brand}")
+                        Text("Allergens: ${product.allergens}")
+                        Text("Barcode: ${product.barcode}")
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             Button(
                 onClick = { manualModeEnabled = true },
@@ -179,18 +186,28 @@ fun BarcodeScannerScreen() {
 
         } else {
             ManualAddItemForm(
-                onSave = { name, brand, category, size, ingredients, allergens ->
-                    Log.d("ManualEntry", "Saved: $name | $brand | $category | $size | $ingredients | $allergens")
+                onSave = { name, brand, allergens ->
+                    val product = ProductData(
+                        name = name,
+                        brand = brand,
+                        allergens = allergens.joinToString(", "),
+                        barcode = System.currentTimeMillis().toString(),
+                        ingredients = "",
+                        category = "",
+                        quantity = ""
+                    )
+                    saveProductToFirestore(product)
+                    Log.d("ManualEntry", "Manually saved product: $product")
                     manualModeEnabled = false
                 },
                 onCancel = {
                     manualModeEnabled = false
                 }
-
             )
         }
     }
 }
+
 fun saveProductToFirestore(product: ProductData) {
     val db = FirebaseFirestore.getInstance()
     db.collection("products")
@@ -203,20 +220,16 @@ fun saveProductToFirestore(product: ProductData) {
             Log.e("FIRESTORE", "Error saving product: ${it.message}")
         }
 }
-@kotlin.OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+
+
 @Composable
 fun ManualAddItemForm(
-    onSave: (name: String, brand: String, category: String, size: String, ingredients: String, allergens: List<String>) -> Unit,
+    onSave: (name: String, brand: String, allergens: List<String>) -> Unit,
     onCancel: () -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var brand by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("") }
-    var size by remember { mutableStateOf("") }
-    var ingredients by remember { mutableStateOf("") }
-    var selectedAllergens by remember { mutableStateOf(listOf<String>()) }
-
-
+    var allergensText by remember { mutableStateOf("") }
 
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -239,31 +252,16 @@ fun ManualAddItemForm(
         )
 
         OutlinedTextField(
-            value = category,
-            onValueChange = { category = it },
-            label = { Text("Category (e.g., Dairy, Produce)") },
+            value = allergensText,
+            onValueChange = { allergensText = it },
+            label = { Text("Allergens (comma-separated)") },
             modifier = Modifier.fillMaxWidth()
         )
-
-        OutlinedTextField(
-            value = size,
-            onValueChange = { size = it },
-            label = { Text("Size (e.g., 500g, 1L)") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        OutlinedTextField(
-            value = ingredients,
-            onValueChange = { ingredients = it },
-            label = { Text("Ingredients List") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(onClick = {
-                onSave(name, brand, category, size, ingredients, selectedAllergens)
+                val allergensList = allergensText.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                onSave(name, brand, allergensList)
             }) {
                 Text("Save")
             }
@@ -273,6 +271,4 @@ fun ManualAddItemForm(
             }
         }
     }
-
-
 }
