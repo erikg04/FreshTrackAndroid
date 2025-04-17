@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "641122204863",
+    "project_id": "freshtrack-5cb94",
+    "storage_bucket": "freshtrack-5cb94.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:641122204863:android:02fcec8ae0de214c691a0a",
+        "android_client_info": {
+          "package_name": "com.example.freshtrack"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAN6WEpFVQiwsVhnNFERFb1MLiqFc_J2UA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
