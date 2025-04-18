@@ -12,7 +12,7 @@ import com.example.freshtrack.R
 @Composable
 fun BackgroundImage() {
     Image(
-        painter = painterResource(id = R.drawable.freshtrackbg),
+        painter = painterResource(id = R.drawable.background_pattern),
         contentDescription = null,
         modifier = Modifier.fillMaxSize(),
         contentScale = ContentScale.Crop

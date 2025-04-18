@@ -51,7 +51,7 @@ fun AddIngredientsScreen() {
         )
 
         Divider()
-        Text("Results:", style = MaterialTheme.typography.titleMedium)
+        Text("Inventory:", style = MaterialTheme.typography.titleMedium)
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             items(filteredIngredients) { ingredient ->
