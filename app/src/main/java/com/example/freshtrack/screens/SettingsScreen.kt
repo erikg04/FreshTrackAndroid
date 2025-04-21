@@ -11,38 +11,93 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun SettingsScreen() {
-    var notificationsEnabled by remember { mutableStateOf(true) }
-    val context = LocalContext.current
+fun SettingsScreen(
+    isDarkMode: Boolean,
+    onThemeChange: (Boolean) -> Unit,
+    isNotificationsEnabled: Boolean,
+    onNotificationsToggle: (Boolean) -> Unit,
+    onLogout: () -> Unit
+) {
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp)) {
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
         Text("Settings", style = MaterialTheme.typography.headlineMedium)
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Enable Notifications")
-            Switch(
-                checked = notificationsEnabled,
-                onCheckedChange = { notificationsEnabled = it }
-            )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Notifications toggle
+        SettingSwitchItem(
+            title = "Enable Notifications",
+            checked = isNotificationsEnabled,
+            onCheckedChange = onNotificationsToggle
+        )
+
+        // Theme toggle
+        SettingSwitchItem(
+            title = "Dark Mode",
+            checked = isDarkMode,
+            onCheckedChange = onThemeChange
+        )
+
+        // Account Section
+        Divider(Modifier.padding(vertical = 12.dp))
+        Text("Account", style = MaterialTheme.typography.titleMedium)
+
+
+        SettingTextItem(title = "Change Password") {
+            // Navigate to change password screen
         }
 
+        SettingTextItem(title = "Delete Account") {
+            // Show confirmation dialog
+        }
+
+        // About Section
+        Divider(Modifier.padding(vertical = 12.dp))
+        Text("About", style = MaterialTheme.typography.titleMedium)
+
+        SettingTextItem(title = "App Version: 1.15") {}
+        SettingTextItem(title = "Send Feedback") {
+            // Launch email intent
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // Log out button
         Button(
-            onClick = {
-                AuthManager.signOut()
-                (context as? Activity)?.recreate()
-            },
-            modifier = Modifier.fillMaxWidth()
+            onClick = onLogout,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.error)
         ) {
             Text("Log Out")
         }
+    }
+}
+
+@Composable
+fun SettingSwitchItem(
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(title)
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
+    }
+}
+
+@Composable
+fun SettingTextItem(title: String, onClick: () -> Unit) {
+    TextButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Text(title, modifier = Modifier.padding(vertical = 4.dp))
     }
 }
