@@ -30,6 +30,7 @@ import com.google.mlkit.vision.common.InputImage
 import com.example.freshtrack.api.OpenFoodFactsApi
 import com.example.freshtrack.api.ProductData
 import com.example.freshtrack.ui.components.OverlayView
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 
@@ -209,17 +210,26 @@ fun BarcodeScannerScreen() {
 }
 
 fun saveProductToFirestore(product: ProductData) {
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
+    if (userId == null) {
+        Log.e("FIRESTORE", "User not logged in")
+        return
+    }
+
     val db = FirebaseFirestore.getInstance()
-    db.collection("products")
+    db.collection("users")
+        .document(userId)
+        .collection("scannedProducts")
         .document(product.barcode)
         .set(product)
         .addOnSuccessListener {
-            Log.d("FIRESTORE", "Product saved: ${product.name}")
+            Log.d("FIRESTORE", "Product saved under user: ${product.name}")
         }
         .addOnFailureListener {
             Log.e("FIRESTORE", "Error saving product: ${it.message}")
         }
 }
+
 
 
 @Composable

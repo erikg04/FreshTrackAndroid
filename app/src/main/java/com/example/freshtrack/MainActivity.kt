@@ -27,63 +27,66 @@ import com.example.freshtrack.screens.*
 import com.example.freshtrack.ui.theme.FreshTrackTheme
 import android.widget.Toast
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.freshtrack.screens.BarcodeScannerScreen
 import com.example.freshtrack.ui.components.BackgroundImage
-
-
-
-
-
-
+import com.example.freshtrack.viewmodel.ThemeViewModel
 
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            FreshTrackTheme {
-                val context = LocalContext.current
-                var isLoggedIn by remember { mutableStateOf(AuthManager.isUserLoggedIn()) }
+            val themeViewModel: ThemeViewModel = viewModel()
+            val isDarkMode = themeViewModel.isDarkMode.value
+            val context = LocalContext.current
+            var isLoggedIn by remember { mutableStateOf(AuthManager.isUserLoggedIn()) }
 
-                if (isLoggedIn) {
-                    FreshTrackApp() // ✅ Only shows app if user is logged in
-                } else {
-                    SignInScreen(
-                        onSignIn = { email, password ->
-                            AuthManager.signIn(
-                                email, password,
-                                onSuccess = {
-                                    isLoggedIn = true
-                                    Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show()
-                                },
-                                onError = { message ->
-                                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                                }
-                            )
-                        },
-                        onSignUp = { email, password ->
-                            AuthManager.signUp(
-                                email, password,
-                                onSuccess = {
-                                    isLoggedIn = true
-                                    Toast.makeText(context, "Account created!", Toast.LENGTH_SHORT)
-                                        .show()
-                                },
-                                onError = { message ->
-                                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                                }
-                            )
-                        }
-                    )
+            FreshTrackTheme(darkTheme = isDarkMode) {
+                Box(Modifier.fillMaxSize()) {
+                    BackgroundImage(isDarkMode = isDarkMode)
+
+                    if (isLoggedIn) {
+                        FreshTrackApp(
+                            isDarkMode = isDarkMode,
+                            onThemeChange = { themeViewModel.toggleTheme(it) }
+                        )
+                    } else {
+                        SignInScreen(
+                            onSignIn = { email, password ->
+                                AuthManager.signIn(
+                                    email, password,
+                                    onSuccess = {
+                                        isLoggedIn = true
+                                        Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onError = { message ->
+                                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                                    }
+                                )
+                            },
+                            onSignUp = { email, password ->
+                                AuthManager.signUp(
+                                    email, password,
+                                    onSuccess = {
+                                        isLoggedIn = true
+                                        Toast.makeText(context, "Account created!", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onError = { message ->
+                                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                                    }
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }
     }
 }
-/**
- * Defines the screens for the bottom nav.
- * I added a Scan screen for the plus icon.
- */
+
+
+
 sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     object Home : Screen("home", "Home", Icons.Default.Home)
     object Profile : Screen("profile", "Profile", Icons.Default.Person)
@@ -97,15 +100,18 @@ sealed class Screen(val route: String, val title: String, val icon: androidx.com
 
 
 
-@Preview
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FreshTrackApp() {
+fun FreshTrackApp(
+    isDarkMode: Boolean,
+    onThemeChange: (Boolean) ->Unit
+) {
     val navController = rememberNavController()
 
     Box(modifier = Modifier.fillMaxSize()) {
         // draws your full‑screen JPG/PNG pattern
-        BackgroundImage()
+        BackgroundImage(isDarkMode=isDarkMode)
 
         Scaffold(
             // make the background just a bit translucent so pattern peeks through
@@ -125,7 +131,15 @@ fun FreshTrackApp() {
                 composable(Screen.Profile.route) { ProfileScreen() }
                 composable(Screen.Scan.route) { BarcodeScannerScreen() }
                 composable(Screen.Ingredients.route) { AddIngredientsScreen() }
-                composable(Screen.Settings.route) { SettingsScreen() }
+                composable(Screen.Settings.route) {
+                    SettingsScreen(
+                        isDarkMode = isDarkMode,
+                        onThemeChange = onThemeChange,
+                        isNotificationsEnabled = true,
+                        onNotificationsToggle = {},
+                        onLogout = {}
+                    )
+                }
             }
         }
     }

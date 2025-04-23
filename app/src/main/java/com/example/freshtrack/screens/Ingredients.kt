@@ -9,18 +9,36 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.example.freshtrack.api.ProductData
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddIngredientsScreen() {
     var searchQuery by remember { mutableStateOf("") }
+    var ingredients by remember { mutableStateOf<List<String>>(emptyList()) }
 
-    // Replace with your real data later
-    val allIngredients = listOf(
-        "Tomato", "Onion", "Garlic", "Milk", "Egg", "Cheese",
-        "Carrot", "Chicken", "Lettuce", "Spinach", "Butter", "Yogurt"
-    )
-    val filteredIngredients = allIngredients.filter {
+    // Fetch user inventory once when screen loads
+    LaunchedEffect(Unit) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId != null) {
+            FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(userId)
+                .collection("scannedProducts")
+                .get()
+                .addOnSuccessListener { result ->
+                    ingredients = result.mapNotNull { it.getString("name") }
+                }
+                .addOnFailureListener {
+                    // Handle failure if needed
+                }
+        }
+    }
+
+    val filteredIngredients = ingredients.filter {
         it.contains(searchQuery, ignoreCase = true)
     }
 
