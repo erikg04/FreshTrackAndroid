@@ -33,10 +33,13 @@ import com.example.freshtrack.ui.components.BackgroundImage
 import com.example.freshtrack.viewmodel.ThemeViewModel
 
 
+
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+
             val themeViewModel: ThemeViewModel = viewModel()
             val isDarkMode = themeViewModel.isDarkMode.value
             val context = LocalContext.current
@@ -49,7 +52,12 @@ class MainActivity : ComponentActivity() {
                     if (isLoggedIn) {
                         FreshTrackApp(
                             isDarkMode = isDarkMode,
-                            onThemeChange = { themeViewModel.toggleTheme(it) }
+                            onThemeChange = { themeViewModel.toggleTheme(it) },
+                            onLogout = {
+                                AuthManager.signOut()
+                                Toast.makeText(context, "You've been logged out", Toast.LENGTH_SHORT).show()
+                                isLoggedIn = false
+                            }
                         )
                     } else {
                         SignInScreen(
@@ -65,9 +73,9 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             },
-                            onSignUp = { email, password ->
+                            onSignUp = { name, email, password ->
                                 AuthManager.signUp(
-                                    email, password,
+                                    name, email, password,
                                     onSuccess = {
                                         isLoggedIn = true
                                         Toast.makeText(context, "Account created!", Toast.LENGTH_SHORT).show()
@@ -105,7 +113,8 @@ sealed class Screen(val route: String, val title: String, val icon: androidx.com
 @Composable
 fun FreshTrackApp(
     isDarkMode: Boolean,
-    onThemeChange: (Boolean) ->Unit
+    onThemeChange: (Boolean) ->Unit,
+    onLogout: () -> Unit
 ) {
     val navController = rememberNavController()
 
@@ -137,7 +146,7 @@ fun FreshTrackApp(
                         onThemeChange = onThemeChange,
                         isNotificationsEnabled = true,
                         onNotificationsToggle = {},
-                        onLogout = {}
+                        onLogout = onLogout
                     )
                 }
             }

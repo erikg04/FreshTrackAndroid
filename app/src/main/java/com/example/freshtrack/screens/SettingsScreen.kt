@@ -19,6 +19,7 @@ fun SettingsScreen(
     isNotificationsEnabled: Boolean,
     onNotificationsToggle: (Boolean) -> Unit,
     onLogout: () -> Unit
+    
 ) {
     Column(modifier = Modifier
         .fillMaxSize()
@@ -74,6 +75,7 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Log Out")
+
         }
     }
 }
