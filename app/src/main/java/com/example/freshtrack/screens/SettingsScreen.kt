@@ -22,7 +22,7 @@ fun SettingsScreen(
         .fillMaxSize()
         .padding(16.dp)) {
 
-        Text("Settings", style = MaterialTheme.typography.headlineMedium)
+        Text("Settings", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -30,7 +30,8 @@ fun SettingsScreen(
         SettingSwitchItem(
             title = "Enable Notifications",
             checked = isNotificationsEnabled,
-            onCheckedChange = onNotificationsToggle
+            onCheckedChange = onNotificationsToggle,
+
         )
 
         // Theme toggle
@@ -42,7 +43,7 @@ fun SettingsScreen(
 
         // Account Section
         Divider(Modifier.padding(vertical = 12.dp))
-        Text("Account", style = MaterialTheme.typography.titleMedium)
+        Text("Account", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
 
 
         SettingTextItem(title = "Change Password") {
@@ -55,7 +56,7 @@ fun SettingsScreen(
 
         // About Section
         Divider(Modifier.padding(vertical = 12.dp))
-        Text("About", style = MaterialTheme.typography.titleMedium)
+        Text("About", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
 
         SettingTextItem(title = "App Version: 1.15") {}
         SettingTextItem(title = "Send Feedback") {
@@ -86,7 +87,11 @@ fun SettingSwitchItem(
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(title)
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground
+        )
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange
@@ -97,6 +102,11 @@ fun SettingSwitchItem(
 @Composable
 fun SettingTextItem(title: String, onClick: () -> Unit) {
     TextButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Text(title, modifier = Modifier.padding(vertical = 4.dp))
+        Text(
+            text = title,
+            modifier = Modifier.padding(vertical = 4.dp),
+
+
+        )
     }
 }

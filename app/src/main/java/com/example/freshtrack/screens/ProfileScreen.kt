@@ -15,7 +15,9 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.ui.graphics.Color
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen() {
     var name by remember { mutableStateOf("John Doe") }
@@ -29,7 +31,7 @@ fun ProfileScreen() {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Profile Header
-        Text("Your Profile", style = MaterialTheme.typography.headlineMedium)
+        Text("Your Profile", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
 
         OutlinedTextField(
             value = name,
@@ -42,7 +44,10 @@ fun ProfileScreen() {
             value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+
         )
 
         OutlinedTextField(
@@ -62,32 +67,23 @@ fun ProfileScreen() {
         Divider(modifier = Modifier.padding(vertical = 8.dp))
 
         // Action Items
-        ProfileOption(text = "Saved Recipes", icon = Icons.Default.Bookmark)
-        ProfileOption(text = "Preferences", icon = Icons.Default.Settings) {
+        ProfileTextItem(title = "Saved Recipes"){
+
+        }
+        ProfileTextItem(title = "Preferences") {
 
         }
     }
 }
 
 @Composable
-fun ProfileOption(
-    text: String,
-    icon: ImageVector,
-    onClick: () -> Unit = {}
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Icon(icon, contentDescription = text, modifier = Modifier.padding(end = 16.dp))
-            Text(text, style = MaterialTheme.typography.bodyLarge)
-        }
+fun ProfileTextItem(title: String, onClick: () -> Unit) {
+    TextButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = title,
+            modifier = Modifier.padding(vertical = 4.dp),
+
+
+            )
     }
 }
-

@@ -48,8 +48,8 @@ fun AddIngredientsScreen() {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Search Ingredients", style = MaterialTheme.typography.headlineMedium)
-        color = MaterialTheme.colorScheme.onBackground,
+        Text("Search Ingredients", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
+
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
@@ -59,18 +59,12 @@ fun AddIngredientsScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-                cursorColor = MaterialTheme.colorScheme.primary,
-                focusedBorderColor = Color.Transparent,
-                unfocusedBorderColor = Color.Transparent,
-                disabledBorderColor = Color.Transparent,
 
-            )
+
         )
 
         Divider()
-        Text("Inventory:", style = MaterialTheme.typography.titleMedium)
+        Text("Inventory:", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             items(filteredIngredients) { ingredient ->
