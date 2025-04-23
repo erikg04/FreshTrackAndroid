@@ -49,7 +49,7 @@ fun AddIngredientsScreen() {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text("Search Ingredients", style = MaterialTheme.typography.headlineMedium)
-
+        color = MaterialTheme.colorScheme.onBackground,
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
@@ -64,7 +64,8 @@ fun AddIngredientsScreen() {
                 cursorColor = MaterialTheme.colorScheme.primary,
                 focusedBorderColor = Color.Transparent,
                 unfocusedBorderColor = Color.Transparent,
-                disabledBorderColor = Color.Transparent
+                disabledBorderColor = Color.Transparent,
+
             )
         )
 

@@ -18,7 +18,8 @@ fun HomeScreen(navController: NavHostController) {
     ) {
         Text(
             text = "FreshTrack",
-            style = MaterialTheme.typography.headlineMedium
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onBackground
         )
 
 

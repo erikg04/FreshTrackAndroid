@@ -46,7 +46,7 @@ fun BarcodeScannerScreen() {
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         if (!manualModeEnabled) {
-            Text("Open Barcode Scanner", style = MaterialTheme.typography.headlineMedium)
+            Text("Barcode Scanner", style = MaterialTheme.typography.headlineMedium)
             Spacer(modifier = Modifier.height(16.dp))
 
             AndroidView(

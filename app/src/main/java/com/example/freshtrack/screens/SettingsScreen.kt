@@ -67,8 +67,7 @@ fun SettingsScreen(
         // Log out button
         Button(
             onClick = onLogout,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.error)
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text("Log Out")
         }
