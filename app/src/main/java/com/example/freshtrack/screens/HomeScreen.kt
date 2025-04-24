@@ -9,57 +9,58 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import com.example.freshtrack.api.RecipeResult
 import com.example.freshtrack.api.RetrofitClient
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import coil.compose.AsyncImage
 import com.google.firebase.firestore.SetOptions
+import java.time.LocalDate
+import java.time.YearMonth
 
 @Composable
 fun HomeScreen(navController: NavHostController) {
+    // Firestore & API setup
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     val db = FirebaseFirestore.getInstance()
     val apiKey = "8ab5c4c2685b4d119d9086796aa35484"
 
+    // State holders
     val ingredients = remember { mutableStateListOf<String>() }
     val recipes = remember { mutableStateListOf<RecipeResult>() }
+    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
-    // Step 1: Load ingredients from Firestore
+    // Load ingredients
     LaunchedEffect(userId) {
-        db.collection("users").document(userId).collection("ingredients")
+        db.collection("users")
+            .document(userId)
+            .collection("ingredients")
             .get()
-            .addOnSuccessListener { snapshot ->
-                val names = snapshot.documents.mapNotNull { it.getString("name") }
-                Log.d("FIRESTORE", "Ingredients: $names")
+            .addOnSuccessListener { snap ->
                 ingredients.clear()
-                ingredients.addAll(names)
-            }
-            .addOnFailureListener {
-                Log.e("FIRESTORE", "Error loading ingredients: ${it.message}")
+                ingredients.addAll(snap.documents.mapNotNull { it.getString("name") })
             }
     }
 
-    // Step 2: Fetch recipes when ingredients are ready
+    // Fetch recipes
     LaunchedEffect(ingredients.toList()) {
         if (ingredients.isNotEmpty()) {
             try {
-                val ingredientQuery = ingredients.joinToString(",")
+                val query = ingredients.joinToString(",")
                 val result = RetrofitClient.spoonacularApi.findRecipes(
-                    ingredients = ingredientQuery,
+                    ingredients = query,
                     apiKey = apiKey
                 )
                 recipes.clear()
                 recipes.addAll(result)
             } catch (e: Exception) {
-                Log.e("SPOONACULAR", e.message ?: "API call failed")
+                Log.e("SPOONACULAR", e.message ?: "API failed")
             }
         }
     }
 
-    // Step 3: UI
     Column(
-        modifier = Modifier
+        Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
@@ -68,18 +69,31 @@ fun HomeScreen(navController: NavHostController) {
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onBackground
         )
+        Spacer(Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
+        // 1. Embed the calendar
+        SimpleCalendarScreen(
+            yearMonth = YearMonth.now(),
+            onDateSelected = { date: LocalDate ->
+                selectedDate = date
+                // TODO: load/filter meals for `date`
+            }
+        )
 
-        if (recipes.isNotEmpty()) {
+        Spacer(Modifier.height(16.dp))
+
+        // 2. Show selected date header
+        selectedDate?.let { date ->
             Text(
-                text = "Meals You Can Make:",
+                text = "Meals for ${date.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault())} ${date.dayOfMonth}",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
+            Spacer(Modifier.height(8.dp))
+        }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
+        // 3. Show recipe suggestions
+        if (recipes.isNotEmpty()) {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(recipes) { recipe ->
                     Card(
@@ -87,8 +101,7 @@ fun HomeScreen(navController: NavHostController) {
                         colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
                         elevation = CardDefaults.cardElevation(4.dp)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            // 🖼️ Show recipe image
+                        Column(Modifier.padding(16.dp)) {
                             AsyncImage(
                                 model = recipe.image,
                                 contentDescription = recipe.title,
@@ -96,38 +109,27 @@ fun HomeScreen(navController: NavHostController) {
                                     .fillMaxWidth()
                                     .height(180.dp)
                             )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
+                            Spacer(Modifier.height(8.dp))
                             Text(recipe.title, style = MaterialTheme.typography.bodyLarge)
-
+                            Spacer(Modifier.height(4.dp))
                             Text(
-                                text = "${recipe.usedIngredientCount} used · ${recipe.missedIngredientCount} missing",
+                                "${recipe.usedIngredientCount} used · ${recipe.missedIngredientCount} missing",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // ✅ Save button
+                            Spacer(Modifier.height(8.dp))
                             Button(
                                 onClick = {
-                                    val saveData = mapOf(
+                                    val save = mapOf(
                                         "id" to recipe.id,
                                         "title" to recipe.title,
                                         "image" to recipe.image
                                     )
-
-                                    db.collection("users").document(userId)
+                                    db.collection("users")
+                                        .document(userId)
                                         .collection("savedRecipes")
                                         .document(recipe.id.toString())
-                                        .set(saveData, SetOptions.merge())
-                                        .addOnSuccessListener {
-                                            Log.d("SAVE_RECIPE", "Recipe saved: ${recipe.title}")
-                                        }
-                                        .addOnFailureListener {
-                                            Log.e("SAVE_RECIPE", "Failed to save: ${it.message}")
-                                        }
+                                        .set(save, SetOptions.merge())
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -137,9 +139,11 @@ fun HomeScreen(navController: NavHostController) {
                     }
                 }
             }
-
         } else {
-            Text("No meal suggestions yet. Scan ingredients to get started!", color = MaterialTheme.colorScheme.onBackground)
+            Text(
+                "No meal suggestions yet. Scan ingredients to get started!",
+                color = MaterialTheme.colorScheme.onBackground
+            )
         }
     }
 }
