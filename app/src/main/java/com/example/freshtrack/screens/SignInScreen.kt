@@ -10,7 +10,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun SignInScreen(
     onSignIn: (email: String, password: String) -> Unit,
-    onSignUp: (email: String, password: String) -> Unit
+    onSignUp: ( email: String, name: String, password: String) -> Unit
 ) {
     var isSignUpMode by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }  // Only used for sign up (optional)
@@ -56,7 +56,7 @@ fun SignInScreen(
         Button(
             onClick = {
                 if (isSignUpMode) {
-                    onSignUp(email, password)
+                    onSignUp(email, name, password)
                 } else {
                     onSignIn(email, password)
                 }

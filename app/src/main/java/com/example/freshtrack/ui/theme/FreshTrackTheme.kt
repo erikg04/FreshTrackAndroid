@@ -38,12 +38,13 @@ private val DarkColorScheme = darkColorScheme(
     onSecondary   = IconDark,
     tertiary      = IconRed,
     onTertiary    = IconCream,
-    background    = IconTeal,
+    background    = Color(0xFF414241),      // <- changed from IconTeal
     onBackground  = IconCream,
-    surface       = IconBrown,
+    surface       = Color(0xFF121212), // <- a very dark gray, better for surface
     onSurface     = IconCream,
     error         = IconRed,
     onError       = IconCream
+
 )
 
 // ── Theme wrapper ───────────────────────────────────────────────────
