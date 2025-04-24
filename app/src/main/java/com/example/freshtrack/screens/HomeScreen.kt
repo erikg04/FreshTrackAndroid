@@ -31,6 +31,7 @@ fun HomeScreen(navController: NavHostController) {
             .get()
             .addOnSuccessListener { snapshot ->
                 val names = snapshot.documents.mapNotNull { it.getString("name") }
+                Log.d("FIRESTORE", "Ingredients: $names")
                 ingredients.clear()
                 ingredients.addAll(names)
             }
