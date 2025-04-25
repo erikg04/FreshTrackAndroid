@@ -29,6 +29,7 @@ import android.widget.Toast
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.freshtrack.screens.BarcodeScannerScreen
+import com.example.freshtrack.screens.SimpleCalendarScreen
 import com.example.freshtrack.ui.components.BackgroundImage
 import com.example.freshtrack.viewmodel.ThemeViewModel
 
@@ -137,6 +138,7 @@ fun FreshTrackApp(
                 modifier = Modifier.padding(paddingValues)
             ) {
                 composable(Screen.Home.route) { HomeScreen(navController) }
+                composable("calendar") { SimpleCalendarScreen() }
                 composable(Screen.Profile.route) { ProfileScreen() }
                 composable(Screen.Scan.route) { BarcodeScannerScreen() }
                 composable(Screen.Ingredients.route) { AddIngredientsScreen() }
