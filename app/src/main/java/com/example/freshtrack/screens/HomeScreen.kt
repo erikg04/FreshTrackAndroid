@@ -40,6 +40,7 @@ fun HomeScreen(navController: NavHostController) {
             }
     }
 
+
     // Step 2: Fetch recipes when ingredients are ready
     LaunchedEffect(ingredients.toList()) {
         if (ingredients.isNotEmpty()) {
