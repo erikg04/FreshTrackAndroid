@@ -217,18 +217,35 @@ fun saveProductToFirestore(product: ProductData) {
     }
 
     val db = FirebaseFirestore.getInstance()
+
+    // Save full product data into "scannedProducts"
     db.collection("users")
         .document(userId)
         .collection("scannedProducts")
         .document(product.barcode)
         .set(product)
         .addOnSuccessListener {
-            Log.d("FIRESTORE", "Product saved under user: ${product.name}")
+            Log.d("FIRESTORE", "Product saved under scannedProducts: ${product.name}")
+
+            // 🔥 Also save just the ingredient name into "ingredients"
+            val ingredientData = mapOf("name" to product.name)
+            db.collection("users")
+                .document(userId)
+                .collection("ingredients")
+                .add(ingredientData)
+                .addOnSuccessListener {
+                    Log.d("FIRESTORE", "Ingredient saved: ${product.name}")
+                }
+                .addOnFailureListener {
+                    Log.e("FIRESTORE", "Failed to save ingredient: ${it.message}")
+                }
+
         }
         .addOnFailureListener {
             Log.e("FIRESTORE", "Error saving product: ${it.message}")
         }
 }
+
 
 
 

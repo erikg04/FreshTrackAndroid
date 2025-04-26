@@ -9,12 +9,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import com.example.freshtrack.api.RecipeResult
 import com.example.freshtrack.api.RetrofitClient
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import coil.compose.AsyncImage
 import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(navController: NavHostController) {
@@ -24,8 +25,9 @@ fun HomeScreen(navController: NavHostController) {
 
     val ingredients = remember { mutableStateListOf<String>() }
     val recipes = remember { mutableStateListOf<RecipeResult>() }
+    val scope = rememberCoroutineScope()
 
-    // Step 1: Load ingredients from Firestore
+    // Step 1: Load ingredients from Firestore and fetch recipes immediately after
     LaunchedEffect(userId) {
         db.collection("users").document(userId).collection("ingredients")
             .get()
@@ -34,30 +36,34 @@ fun HomeScreen(navController: NavHostController) {
                 Log.d("FIRESTORE", "Ingredients: $names")
                 ingredients.clear()
                 ingredients.addAll(names)
+
+                if (ingredients.isNotEmpty()) {
+                    val ingredientQuery = ingredients.joinToString(",")
+
+                    scope.launch {
+                        try {
+                            val result = RetrofitClient.spoonacularApi.findRecipes(
+                                ingredients = ingredientQuery,
+                                number = 10,
+                                ranking = 1,
+                                ignorePantry = true,
+                                apiKey = apiKey
+                            )
+                            recipes.clear()
+                            recipes.addAll(result)
+                            Log.d("SPOONACULAR", "Fetched ${recipes.size} recipes")
+                        } catch (e: Exception) {
+                            Log.e("SPOONACULAR", "API call failed: ${e.message}")
+                        }
+                    }
+                }
             }
             .addOnFailureListener {
                 Log.e("FIRESTORE", "Error loading ingredients: ${it.message}")
             }
     }
 
-    // Step 2: Fetch recipes when ingredients are ready
-    LaunchedEffect(ingredients.toList()) {
-        if (ingredients.isNotEmpty()) {
-            try {
-                val ingredientQuery = ingredients.joinToString(",")
-                val result = RetrofitClient.spoonacularApi.findRecipes(
-                    ingredients = ingredientQuery,
-                    apiKey = apiKey
-                )
-                recipes.clear()
-                recipes.addAll(result)
-            } catch (e: Exception) {
-                Log.e("SPOONACULAR", e.message ?: "API call failed")
-            }
-        }
-    }
-
-    // Step 3: UI
+    // Step 2: UI
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -88,7 +94,6 @@ fun HomeScreen(navController: NavHostController) {
                         elevation = CardDefaults.cardElevation(4.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            // 🖼️ Show recipe image
                             AsyncImage(
                                 model = recipe.image,
                                 contentDescription = recipe.title,
@@ -109,7 +114,6 @@ fun HomeScreen(navController: NavHostController) {
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            // ✅ Save button
                             Button(
                                 onClick = {
                                     val saveData = mapOf(
@@ -139,7 +143,10 @@ fun HomeScreen(navController: NavHostController) {
             }
 
         } else {
-            Text("No meal suggestions yet. Scan ingredients to get started!", color = MaterialTheme.colorScheme.onBackground)
+            Text(
+                text = "No meal suggestions yet. Scan ingredients to get started!",
+                color = MaterialTheme.colorScheme.onBackground
+            )
         }
     }
 }
