@@ -16,6 +16,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.YearMonth
 
 @Composable
 fun HomeScreen(navController: NavHostController) {
@@ -26,8 +28,9 @@ fun HomeScreen(navController: NavHostController) {
     val ingredients = remember { mutableStateListOf<String>() }
     val recipes = remember { mutableStateListOf<RecipeResult>() }
     val scope = rememberCoroutineScope()
+    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
-    // Step 1: Load ingredients from Firestore and fetch recipes immediately after
+    // Step 1: Load ingredients from Firestore and fetch recipes
     LaunchedEffect(userId) {
         db.collection("users").document(userId).collection("ingredients")
             .get()
@@ -77,15 +80,29 @@ fun HomeScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (recipes.isNotEmpty()) {
+        SimpleCalendarScreen(
+            yearMonth = YearMonth.now(),
+            onDateSelected = { date: LocalDate ->
+                selectedDate = date
+                // TODO: load/filter meals for selected `date`
+            }
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        // 2. Show selected date header
+        selectedDate?.let { date ->
             Text(
-                text = "Meals You Can Make:",
+                text = "Meals for ${date.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault())} ${date.dayOfMonth}",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
+            Spacer(Modifier.height(8.dp))
+        }
 
-            Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
+        if (recipes.isNotEmpty()) {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(recipes) { recipe ->
                     Card(
@@ -141,7 +158,6 @@ fun HomeScreen(navController: NavHostController) {
                     }
                 }
             }
-
         } else {
             Text(
                 text = "No meal suggestions yet. Scan ingredients to get started!",
