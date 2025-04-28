@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
@@ -19,6 +20,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 
+
 @Composable
 fun HomeScreen(navController: NavHostController) {
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
@@ -29,19 +31,24 @@ fun HomeScreen(navController: NavHostController) {
     val recipes = remember { mutableStateListOf<RecipeResult>() }
     val scope = rememberCoroutineScope()
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
 
-    // Step 1: Load ingredients from Firestore and fetch recipes
+    // Load ingredients and recipes
     LaunchedEffect(userId) {
+        Log.d("DEBUG", "LaunchedEffect started for userId=$userId")
+
         db.collection("users").document(userId).collection("ingredients")
             .get()
             .addOnSuccessListener { snapshot ->
                 val names = snapshot.documents.mapNotNull { it.getString("name") }
-                Log.d("FIRESTORE", "Ingredients: $names")
+                Log.d("DEBUG", "Fetched ingredients: $names")
+
                 ingredients.clear()
                 ingredients.addAll(names)
 
                 if (ingredients.isNotEmpty()) {
                     val ingredientQuery = ingredients.joinToString(",")
+                    Log.d("DEBUG", "Querying Spoonacular with: $ingredientQuery")
 
                     scope.launch {
                         try {
@@ -54,115 +61,140 @@ fun HomeScreen(navController: NavHostController) {
                             )
                             recipes.clear()
                             recipes.addAll(result)
-                            Log.d("SPOONACULAR", "Fetched ${recipes.size} recipes")
+                            Log.d("DEBUG", "Fetched ${recipes.size} recipes from API")
+
+                            // 👇 Move isLoading=false *only after successful fetch
+                            isLoading = false
                         } catch (e: Exception) {
-                            Log.e("SPOONACULAR", "API call failed: ${e.message}")
+                            Log.e("DEBUG", "Spoonacular API call failed: ${e.message}")
+                            isLoading = false
                         }
                     }
+                } else {
+                    Log.d("DEBUG", "No ingredients found in Firestore")
+                    isLoading = false
                 }
             }
             .addOnFailureListener {
-                Log.e("FIRESTORE", "Error loading ingredients: ${it.message}")
+                Log.e("DEBUG", "Firestore load failed: ${it.message}")
+                isLoading = false
             }
     }
 
-    // Step 2: UI
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+    // UI
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = "FreshTrack",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        item {
+            // Calendar Section
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "FreshTrack",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
 
-        Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-        SimpleCalendarScreen(
-            yearMonth = YearMonth.now(),
-            onDateSelected = { date: LocalDate ->
-                selectedDate = date
-                // TODO: load/filter meals for selected `date`
+                SimpleCalendarScreen(
+                    yearMonth = YearMonth.now(),
+                    onDateSelected = { date: LocalDate ->
+                        selectedDate = date
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                selectedDate?.let { date ->
+                    Text(
+                        text = "Meals for ${date.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault())} ${date.dayOfMonth}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
             }
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        // 2. Show selected date header
-        selectedDate?.let { date ->
-            Text(
-                text = "Meals for ${date.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault())} ${date.dayOfMonth}",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Spacer(Modifier.height(8.dp))
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        if (isLoading) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    contentAlignment = androidx.compose.ui.Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        } else if (recipes.isNotEmpty()) {
+            items(recipes) { recipe ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        AsyncImage(
+                            model = recipe.image,
+                            contentDescription = recipe.title,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                        )
 
-        if (recipes.isNotEmpty()) {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(recipes) { recipe ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
-                        elevation = CardDefaults.cardElevation(4.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            AsyncImage(
-                                model = recipe.image,
-                                contentDescription = recipe.title,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(180.dp)
-                            )
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                        Text(recipe.title, style = MaterialTheme.typography.bodyLarge)
 
-                            Text(recipe.title, style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = "${recipe.usedIngredientCount} used · ${recipe.missedIngredientCount} missing",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
 
-                            Text(
-                                text = "${recipe.usedIngredientCount} used · ${recipe.missedIngredientCount} missing",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = {
+                                val saveData = mapOf(
+                                    "id" to recipe.id,
+                                    "title" to recipe.title,
+                                    "image" to recipe.image
+                                )
 
-                            Button(
-                                onClick = {
-                                    val saveData = mapOf(
-                                        "id" to recipe.id,
-                                        "title" to recipe.title,
-                                        "image" to recipe.image
-                                    )
-
-                                    db.collection("users").document(userId)
-                                        .collection("savedRecipes")
-                                        .document(recipe.id.toString())
-                                        .set(saveData, SetOptions.merge())
-                                        .addOnSuccessListener {
-                                            Log.d("SAVE_RECIPE", "Recipe saved: ${recipe.title}")
-                                        }
-                                        .addOnFailureListener {
-                                            Log.e("SAVE_RECIPE", "Failed to save: ${it.message}")
-                                        }
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Save")
-                            }
+                                db.collection("users").document(userId)
+                                    .collection("savedRecipes")
+                                    .document(recipe.id.toString())
+                                    .set(saveData, SetOptions.merge())
+                                    .addOnSuccessListener {
+                                        Log.d("SAVE_RECIPE", "Recipe saved: ${recipe.title}")
+                                    }
+                                    .addOnFailureListener {
+                                        Log.e("SAVE_RECIPE", "Failed to save: ${it.message}")
+                                    }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Save")
                         }
                     }
                 }
             }
         } else {
-            Text(
-                text = "No meal suggestions yet. Scan ingredients to get started!",
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            item {
+                Text(
+                    text = "No meal suggestions yet. Scan ingredients to get started!",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
         }
     }
+
 }
