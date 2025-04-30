@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import java.time.DayOfWeek
@@ -21,9 +22,9 @@ import java.util.*
 @Composable
 fun SimpleCalendarScreen(
     yearMonth: YearMonth = YearMonth.now(),
+    mealsByDate: Map<LocalDate, List<String>> = emptyMap(),
     onDateSelected: (LocalDate) -> Unit = {},
-    textColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onBackground
-
+    textColor: Color = MaterialTheme.colorScheme.onBackground
 ) {
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
@@ -37,7 +38,6 @@ fun SimpleCalendarScreen(
             text = "${yearMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${yearMonth.year}",
             style = MaterialTheme.typography.headlineMedium,
             color = textColor
-
         )
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -48,7 +48,6 @@ fun SimpleCalendarScreen(
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center,
                     color = textColor
-
                 )
             }
         }
@@ -95,7 +94,6 @@ fun SimpleCalendarScreen(
                 text = "Selected: ${date.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${date.dayOfMonth}, ${date.year}",
                 style = MaterialTheme.typography.bodyLarge,
                 color = textColor
-
             )
         }
     }

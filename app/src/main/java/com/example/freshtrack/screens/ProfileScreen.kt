@@ -1,3 +1,4 @@
+// ProfileScreen.kt
 package com.example.freshtrack.screens
 
 import android.util.Log
@@ -14,6 +15,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.launch
+import androidx.compose.ui.layout.ContentScale
 
 data class SavedRecipe(
     val id: Int = 0,
@@ -21,48 +23,33 @@ data class SavedRecipe(
     val image: String = ""
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen() {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-
     val auth = FirebaseAuth.getInstance()
     val user = auth.currentUser
     val emailFromAuth = user?.email ?: "Not logged in"
-
     var name by remember { mutableStateOf("John Pork") }
     var email by remember { mutableStateOf(emailFromAuth) }
     var allergies by remember { mutableStateOf("Peanuts, Dairy") }
-
     val db = FirebaseFirestore.getInstance()
     val savedRecipes = remember { mutableStateListOf<SavedRecipe>() }
 
-    // 🔄 Load profile data and saved recipes
     LaunchedEffect(user?.uid) {
-        if (user != null) {
-            val userDocRef = db.collection("users").document(user.uid)
-
-            userDocRef.get()
+        user?.let { u ->
+            db.collection("users").document(u.uid).get()
                 .addOnSuccessListener { document ->
                     if (document.exists()) {
-                        name = document.getString("name") ?: "Unknown"
+                        name = document.getString("name") ?: ""
                         allergies = document.getString("allergies") ?: ""
                     }
                 }
-                .addOnFailureListener {
-                    Log.e("FIRESTORE", "Failed to fetch user profile: ${it.message}")
-                }
-
-            userDocRef.collection("savedRecipes")
+            db.collection("users").document(u.uid).collection("savedRecipes")
                 .get()
                 .addOnSuccessListener { snapshot ->
-                    val data = snapshot.documents.mapNotNull { it.toObject(SavedRecipe::class.java) }
                     savedRecipes.clear()
-                    savedRecipes.addAll(data)
-                }
-                .addOnFailureListener {
-                    Log.e("FIRESTORE", "Failed to load saved recipes: ${it.message}")
+                    savedRecipes.addAll(snapshot.documents.mapNotNull { it.toObject(SavedRecipe::class.java) })
                 }
         }
     }
@@ -72,103 +59,42 @@ fun ProfileScreen() {
         containerColor = Color.Transparent
     ) { innerPadding ->
         Column(
-            modifier = Modifier
+            Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Your Profile", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
-
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Name") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = false
-            )
-
-            OutlinedTextField(
-                value = allergies,
-                onValueChange = { allergies = it },
-                label = { Text("Allergies (comma separated)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Button(
-                onClick = {
-                    user?.uid?.let { uid ->
-                        val updatedData = mapOf(
-                            "name" to name,
-                            "allergies" to allergies
-                        )
-                        db.collection("users").document(uid)
-                            .set(updatedData, SetOptions.merge())
-                            .addOnSuccessListener {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("✅ Profile saved successfully")
-                                }
-                            }
-                            .addOnFailureListener {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("❌ Failed to save profile: ${it.message}")
-                                }
-                            }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Text("Your Profile", style = MaterialTheme.typography.headlineMedium)
+            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), enabled = false)
+            OutlinedTextField(value = allergies, onValueChange = { allergies = it }, label = { Text("Allergies (comma separated)") }, modifier = Modifier.fillMaxWidth())
+            Button(onClick = {
+                user?.uid?.let { uid ->
+                    db.collection("users").document(uid).set(mapOf("name" to name, "allergies" to allergies), SetOptions.merge())
+                        .addOnSuccessListener {
+                            scope.launch { snackbarHostState.showSnackbar("✅ Profile saved successfully") }
+                        }
+                }
+            }, modifier = Modifier.fillMaxWidth()) {
                 Text("Save Profile")
             }
-
             Divider(modifier = Modifier.padding(vertical = 8.dp))
-
-            Text("Saved Recipes", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
-
+            Text("Saved Recipes", style = MaterialTheme.typography.titleMedium)
             if (savedRecipes.isEmpty()) {
-                Text("No saved recipes yet.", color = MaterialTheme.colorScheme.onBackground)
+                Text("No saved recipes yet.")
             } else {
                 savedRecipes.forEach { recipe ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                    ) {
+                    Card(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                         Column(Modifier.padding(12.dp)) {
-                            AsyncImage(
-                                model = recipe.image,
-                                contentDescription = recipe.title,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(160.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
+                            AsyncImage(model = recipe.image, contentDescription = recipe.title, modifier = Modifier.fillMaxWidth().height(160.dp), contentScale = ContentScale.Crop)
+                            Spacer(Modifier.height(8.dp))
                             Text(recipe.title, style = MaterialTheme.typography.bodyLarge)
                         }
                     }
                 }
             }
-
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
-
-            ProfileTextItem(title = "Preferences") {
-                // Navigate to preferences
-            }
         }
-    }
-}
-
-@Composable
-fun ProfileTextItem(title: String, onClick: () -> Unit) {
-    TextButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Text(text = title, modifier = Modifier.padding(vertical = 4.dp))
     }
 }
