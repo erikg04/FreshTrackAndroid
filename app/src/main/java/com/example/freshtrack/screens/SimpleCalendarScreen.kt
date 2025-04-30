@@ -25,7 +25,12 @@ fun SimpleCalendarScreen(
 ) {
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .padding(16.dp)
+    ) {
         Text(
             text = "${yearMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${yearMonth.year}",
             style = MaterialTheme.typography.headlineMedium
@@ -42,6 +47,7 @@ fun SimpleCalendarScreen(
             }
         }
         Spacer(Modifier.height(4.dp))
+
         val firstDay = yearMonth.atDay(1).dayOfWeek.value % 7
         val totalDays = yearMonth.lengthOfMonth()
         val blanksBefore = List(firstDay) { null as LocalDate? }
@@ -51,7 +57,9 @@ fun SimpleCalendarScreen(
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(7),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(240.dp) // Prevent infinite height issue
         ) {
             items(cells) { date ->
                 Box(
@@ -84,3 +92,4 @@ fun SimpleCalendarScreen(
         }
     }
 }
+
