@@ -21,7 +21,9 @@ import java.util.*
 @Composable
 fun SimpleCalendarScreen(
     yearMonth: YearMonth = YearMonth.now(),
-    onDateSelected: (LocalDate) -> Unit = {}
+    onDateSelected: (LocalDate) -> Unit = {},
+    textColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onBackground
+
 ) {
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
@@ -33,7 +35,9 @@ fun SimpleCalendarScreen(
     ) {
         Text(
             text = "${yearMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${yearMonth.year}",
-            style = MaterialTheme.typography.headlineMedium
+            style = MaterialTheme.typography.headlineMedium,
+            color = textColor
+
         )
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -42,7 +46,9 @@ fun SimpleCalendarScreen(
                     text = dow.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    color = textColor
+
                 )
             }
         }
@@ -59,7 +65,7 @@ fun SimpleCalendarScreen(
             columns = GridCells.Fixed(7),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(240.dp) // Prevent infinite height issue
+                .height(240.dp)
         ) {
             items(cells) { date ->
                 Box(
@@ -87,7 +93,9 @@ fun SimpleCalendarScreen(
         selectedDate?.let { date ->
             Text(
                 text = "Selected: ${date.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${date.dayOfMonth}, ${date.year}",
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.bodyLarge,
+                color = textColor
+
             )
         }
     }

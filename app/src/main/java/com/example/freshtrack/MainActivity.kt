@@ -1,49 +1,42 @@
 package com.example.freshtrack
 
-import android.content.Context
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.FoodBank
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.*
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.compose.*
+import com.example.freshtrack.datastore.ThemePreferenceManager
 import com.example.freshtrack.screens.*
-import com.example.freshtrack.ui.theme.FreshTrackTheme
-import android.widget.Toast
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.freshtrack.screens.BarcodeScannerScreen
-import com.example.freshtrack.screens.SimpleCalendarScreen
 import com.example.freshtrack.ui.components.BackgroundImage
+import com.example.freshtrack.ui.theme.FreshTrackTheme
 import com.example.freshtrack.viewmodel.ThemeViewModel
-
-
-
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-
-            val themeViewModel: ThemeViewModel = viewModel()
-            val isDarkMode = themeViewModel.isDarkMode.value
             val context = LocalContext.current
+            val themeViewModel: ThemeViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    val manager = ThemePreferenceManager(context)
+                    return ThemeViewModel(manager) as T
+                }
+            })
+            val isDarkMode by themeViewModel.isDarkMode
             var isLoggedIn by remember { mutableStateOf(AuthManager.isUserLoggedIn()) }
 
             FreshTrackTheme(darkTheme = isDarkMode) {
@@ -62,6 +55,7 @@ class MainActivity : ComponentActivity() {
                         )
                     } else {
                         SignInScreen(
+                            isDarkMode = isDarkMode,
                             onSignIn = { email, password ->
                                 AuthManager.signIn(
                                     email, password,
@@ -94,8 +88,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
-
 sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     object Home : Screen("home", "Home", Icons.Default.Home)
     object Profile : Screen("profile", "Profile", Icons.Default.Person)
@@ -104,27 +96,19 @@ sealed class Screen(val route: String, val title: String, val icon: androidx.com
     object Settings : Screen("settings", "Settings", Icons.Default.Settings)
 }
 
-
-
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FreshTrackApp(
     isDarkMode: Boolean,
-    onThemeChange: (Boolean) ->Unit,
+    onThemeChange: (Boolean) -> Unit,
     onLogout: () -> Unit
 ) {
     val navController = rememberNavController()
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // draws your full‑screen JPG/PNG pattern
-        BackgroundImage(isDarkMode=isDarkMode)
+        BackgroundImage(isDarkMode = isDarkMode)
 
         Scaffold(
-            // make the background just a bit translucent so pattern peeks through
             containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.85f),
             bottomBar = {
                 BottomNavigationBar(navController = navController, onScanClick = {
@@ -156,9 +140,6 @@ fun FreshTrackApp(
     }
 }
 
-
-
-
 @Composable
 fun BottomNavigationBar(navController: NavHostController, onScanClick: () -> Unit) {
     val items = listOf(
@@ -184,7 +165,6 @@ fun BottomNavigationBar(navController: NavHostController, onScanClick: () -> Uni
                         launchSingleTop = true
                         restoreState = true
                     }
-
                 }
             )
         }
