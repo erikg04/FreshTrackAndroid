@@ -23,6 +23,12 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.*
 import androidx.compose.ui.layout.ContentScale
+import com.google.firebase.firestore.FieldValue
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Arrangement
 
 @Composable
 fun HomeScreen(navController: NavHostController) {
@@ -39,12 +45,15 @@ fun HomeScreen(navController: NavHostController) {
     LaunchedEffect(userId) {
         db.collection("users")
             .document(userId)
-            .collection("savedRecipes")
+            .collection("mealCalendar")
             .get()
             .addOnSuccessListener { snap ->
-                val today = LocalDate.now()
                 mealsByDate.clear()
-                mealsByDate[today] = snap.documents.mapNotNull { it.getString("title") }.toMutableList()
+                snap.documents.forEach { doc ->
+                    val date = LocalDate.parse(doc.id)
+                    val list = (doc.get("meals") as? List<String>).orEmpty()
+                    mealsByDate[date] = list.toMutableList()
+                }
             }
     }
 
@@ -110,13 +119,17 @@ fun HomeScreen(navController: NavHostController) {
                     if (meals.isEmpty()) {
                         Text("No meals added.", style = MaterialTheme.typography.bodyLarge)
                     } else {
-                        LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            items(meals) { meal ->
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            meals.forEach { meal ->
                                 Text("• $meal", style = MaterialTheme.typography.bodyLarge)
                             }
                         }
                     }
                 }
+
             }
         }
 
@@ -162,16 +175,32 @@ fun HomeScreen(navController: NavHostController) {
                                     "title" to recipe.title,
                                     "image" to recipe.image
                                 )
+
                                 db.collection("users")
                                     .document(userId)
                                     .collection("savedRecipes")
                                     .document(recipe.id.toString())
                                     .set(saveData, SetOptions.merge())
+
+
+                                val today = LocalDate.now()
+                                (0 until 7).forEach { offset ->
+                                    val key = today.plusDays(offset.toLong()).toString()
+                                    val ref = db.collection("users")
+                                        .document(userId)
+                                        .collection("mealCalendar")
+                                        .document(key)
+                                    ref.update("meals", FieldValue.arrayUnion(recipe.title))
+                                        .addOnFailureListener {
+                                            ref.set(mapOf("meals" to listOf(recipe.title)))
+                                        }
+                                }
                             },
                             Modifier.fillMaxWidth()
                         ) {
                             Text("Save")
                         }
+
                     }
                 }
             }

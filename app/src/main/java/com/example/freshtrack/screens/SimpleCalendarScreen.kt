@@ -1,17 +1,18 @@
 package com.example.freshtrack.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -24,7 +25,7 @@ fun SimpleCalendarScreen(
     yearMonth: YearMonth = YearMonth.now(),
     mealsByDate: Map<LocalDate, List<String>> = emptyMap(),
     onDateSelected: (LocalDate) -> Unit = {},
-    textColor: Color = MaterialTheme.colorScheme.onBackground
+    textColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onBackground
 ) {
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
@@ -46,7 +47,7 @@ fun SimpleCalendarScreen(
                     text = dow.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     color = textColor
                 )
             }
@@ -77,12 +78,27 @@ fun SimpleCalendarScreen(
                                 onDateSelected(it)
                             }
                         },
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.TopCenter
                 ) {
-                    Text(
-                        text = date?.dayOfMonth?.toString() ?: "",
-                        color = if (date == selectedDate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Text(
+                            text = date?.dayOfMonth?.toString() ?: "",
+                            color = if (date == selectedDate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(Modifier.weight(1f))
+                        if (date != null && mealsByDate[date]?.isNotEmpty() == true) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary)
+                            )
+                        }
+                        Spacer(Modifier.height(4.dp))
+                    }
                 }
             }
         }
