@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -32,6 +31,7 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavHostController) {
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
@@ -201,7 +201,10 @@ fun HomeScreen(navController: NavHostController) {
         } else {
             items(recipes) { recipe ->
                 Card(
-                    Modifier.fillMaxWidth(),
+                    onClick = { navController.navigate("details/${recipe.id}") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
                     colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(4.dp)
                 ) {
@@ -242,6 +245,7 @@ fun HomeScreen(navController: NavHostController) {
                     }
                 }
             }
+
         }
     }
 }

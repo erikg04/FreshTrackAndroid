@@ -135,6 +135,13 @@ fun FreshTrackApp(
                         onLogout = onLogout
                     )
                 }
+                composable("details/{recipeId}") { backStackEntry ->
+                    val recipeId = backStackEntry.arguments?.getString("recipeId")?.toIntOrNull()
+                    recipeId?.let {
+                        RecipeDetailScreen(recipeId = it)
+                    }
+                }
+
             }
         }
     }

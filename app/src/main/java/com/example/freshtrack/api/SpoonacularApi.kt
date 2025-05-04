@@ -1,6 +1,8 @@
 package com.example.freshtrack.api
 
+import com.example.freshtrack.screens.RecipeDetailsResponse
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 data class RecipeResult(
@@ -20,4 +22,10 @@ interface SpoonacularApi {
         @Query("ignorePantry") ignorePantry: Boolean = true,
         @Query("apiKey") apiKey: String
     ): List<RecipeResult>
+    @GET("recipes/{id}/information")
+    suspend fun getRecipeDetails(
+        @Path("id") recipeId: Int,
+        @Query("includeNutrition") includeNutrition: Boolean = true,
+        @Query("apiKey") apiKey: String
+    ): RecipeDetailsResponse
 }

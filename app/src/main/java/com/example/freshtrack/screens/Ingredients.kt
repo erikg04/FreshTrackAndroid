@@ -11,13 +11,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.example.freshtrack.api.ProductData
 import androidx.compose.material3.DismissDirection
 import androidx.compose.material3.DismissValue
 import androidx.compose.material3.SwipeToDismiss
 import androidx.compose.material3.rememberDismissState
 import androidx.compose.ui.Alignment
-import androidx.compose.foundation.background
 
 
 
@@ -76,7 +74,7 @@ fun AddIngredientsScreen() {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             items(
                 items = filteredIngredients,
-                key = { it }  // Key is important for smooth swipe animations
+                key = { it }
             ) { ingredient ->
 
                 // Set up dismiss state
