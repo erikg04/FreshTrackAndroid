@@ -3,12 +3,18 @@ package com.example.freshtrack.screens
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.freshtrack.api.RetrofitClient
 import androidx.core.text.HtmlCompat
@@ -50,7 +56,12 @@ fun NutritionFactsBox(nutrients: List<Nutrient>) {
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text("Nutrition Facts", color = MaterialTheme.colorScheme.onBackground, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(
+            "Nutrition Facts",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
         Divider(thickness = 2.dp)
 
         filtered.forEach { nutrient ->
@@ -58,8 +69,17 @@ fun NutritionFactsBox(nutrients: List<Nutrient>) {
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(nutrient.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground)
-                Text("${nutrient.amount} ${nutrient.unit}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onBackground)
+                Text(
+                    nutrient.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    "${nutrient.amount} ${nutrient.unit}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
             }
             Divider(thickness = 1.dp)
         }
@@ -73,63 +93,108 @@ fun NutritionFactsBox(nutrients: List<Nutrient>) {
 }
 
 // --- Detail Screen UI ---
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecipeDetailScreen(recipeId: Int) {
+fun RecipeDetailScreen(
+    navController: NavController,
+    recipeId: Int
+) {
     var recipe by remember { mutableStateOf<RecipeDetailsResponse?>(null) }
 
     LaunchedEffect(recipeId) {
         try {
-            val api = RetrofitClient.spoonacularApi
-            recipe = api.getRecipeDetails(recipeId, true, "8ab5c4c2685b4d119d9086796aa35484")
+            recipe = RetrofitClient.spoonacularApi
+                .getRecipeDetails(recipeId, true, "8ab5c4c2685b4d119d9086796aa35484")
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
-    recipe?.let {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                Text(it.title, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
-            }
-
-            item {
-                AsyncImage(
-                    model = it.image,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
+    recipe?.let { it ->
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(it.title) },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    }
                 )
             }
-
-            item {
-                Text(
-                    HtmlCompat.fromHtml(it.summary, HtmlCompat.FROM_HTML_MODE_LEGACY).toString(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            item {
-                NutritionFactsBox(it.nutrition.nutrients)
-            }
-
-            it.instructions?.let { inst ->
+        ) { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
                 item {
-                    Text("Instructions:", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
+                    Text(
+                        it.title,
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
                 }
+
                 item {
-                    Text(inst, overflow = TextOverflow.Clip, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onBackground)
+                    AsyncImage(
+                        model = it.image,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                    )
+                }
+
+                item {
+                    Text(
+                        HtmlCompat.fromHtml(it.summary, HtmlCompat.FROM_HTML_MODE_LEGACY).toString(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                item {
+                    NutritionFactsBox(it.nutrition.nutrients)
+                }
+
+                it.instructions?.let { inst ->
+                    item {
+                        Text(
+                            "Instructions:",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                    item {
+                        Text(
+                            inst,
+                            overflow = TextOverflow.Clip,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                }
+
+                item {
+                    Spacer(Modifier.height(24.dp))
+                    Button(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Go Back")
+                    }
                 }
             }
         }
     } ?: run {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
             CircularProgressIndicator()
         }
     }

@@ -18,11 +18,14 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.*
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import com.example.freshtrack.datastore.ThemePreferenceManager
 import com.example.freshtrack.screens.*
 import com.example.freshtrack.ui.components.BackgroundImage
 import com.example.freshtrack.ui.theme.FreshTrackTheme
 import com.example.freshtrack.viewmodel.ThemeViewModel
+import androidx.compose.ui.graphics.vector.ImageVector
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,7 +91,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
+sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Home : Screen("home", "Home", Icons.Default.Home)
     object Profile : Screen("profile", "Profile", Icons.Default.Person)
     object Scan : Screen("scan", "Scan", Icons.Default.Add)
@@ -121,11 +124,21 @@ fun FreshTrackApp(
                 startDestination = Screen.Home.route,
                 modifier = Modifier.padding(paddingValues)
             ) {
-                composable(Screen.Home.route) { HomeScreen(navController) }
-                composable("calendar") { SimpleCalendarScreen() }
-                composable(Screen.Profile.route) { ProfileScreen() }
-                composable(Screen.Scan.route) { BarcodeScannerScreen() }
-                composable(Screen.Ingredients.route) { AddIngredientsScreen() }
+                composable(Screen.Home.route) {
+                    HomeScreen(navController)
+                }
+                composable("calendar") {
+                    SimpleCalendarScreen()
+                }
+                composable(Screen.Profile.route) {
+                    ProfileScreen()
+                }
+                composable(Screen.Scan.route) {
+                    BarcodeScannerScreen()
+                }
+                composable(Screen.Ingredients.route) {
+                    AddIngredientsScreen()
+                }
                 composable(Screen.Settings.route) {
                     SettingsScreen(
                         isDarkMode = isDarkMode,
@@ -135,13 +148,22 @@ fun FreshTrackApp(
                         onLogout = onLogout
                     )
                 }
-                composable("details/{recipeId}") { backStackEntry ->
-                    val recipeId = backStackEntry.arguments?.getString("recipeId")?.toIntOrNull()
+
+                // ← Updated details route to pass navController into RecipeDetailScreen
+                composable(
+                    route = "details/{recipeId}",
+                    arguments = listOf(navArgument("recipeId") {
+                        type = NavType.IntType
+                    })
+                ) { backStackEntry ->
+                    val recipeId = backStackEntry.arguments?.getInt("recipeId")
                     recipeId?.let {
-                        RecipeDetailScreen(recipeId = it)
+                        RecipeDetailScreen(
+                            navController = navController,
+                            recipeId     = it
+                        )
                     }
                 }
-
             }
         }
     }
@@ -156,6 +178,7 @@ fun BottomNavigationBar(navController: NavHostController, onScanClick: () -> Uni
         Screen.Ingredients,
         Screen.Settings
     )
+
     NavigationBar {
         val currentDestination = navController.currentBackStackEntryAsState().value?.destination
         items.forEach { screen ->
@@ -177,3 +200,4 @@ fun BottomNavigationBar(navController: NavHostController, onScanClick: () -> Uni
         }
     }
 }
+
