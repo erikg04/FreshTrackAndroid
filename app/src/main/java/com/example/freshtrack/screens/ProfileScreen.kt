@@ -38,7 +38,7 @@ fun ProfileScreen() {
     val db = FirebaseFirestore.getInstance()
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf(user?.email ?: "Not logged in") }
-    var allergies by remember { mutableStateOf("Peanuts, Dairy") }
+    var allergies by remember { mutableStateOf("") }
     val savedRecipes = remember { mutableStateListOf<SavedRecipe>() }
 
     LaunchedEffect(user?.uid) {
