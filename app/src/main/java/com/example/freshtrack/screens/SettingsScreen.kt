@@ -2,6 +2,7 @@ package com.example.freshtrack.screens
 
 import android.app.Activity
 import android.content.Context
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,7 +12,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun SettingsScreen(
@@ -25,6 +28,7 @@ fun SettingsScreen(
 
 {
     val context = LocalContext.current
+    val auth = FirebaseAuth.getInstance()
     var showPasswordDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -93,9 +97,26 @@ fun SettingsScreen(
 
         }
     }
-    ChangePasswordDialog(showDialog = showPasswordDialog) {
-        showPasswordDialog = false
+    if (showPasswordDialog) {
+        ChangePasswordDialog(
+            onDismiss = { showPasswordDialog = false },
+            onConfirm = { newPassword ->
+                val user = FirebaseAuth.getInstance().currentUser
+                if (user != null) {
+                    user.updatePassword(newPassword)
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                Toast.makeText(context, "Password updated", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "Error: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                }
+                showPasswordDialog = false
+            }
+        )
     }
+
 
     DeleteAccountDialog(
         showDialog = showDeleteDialog,
@@ -142,39 +163,68 @@ fun SettingTextItem(title: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun ChangePasswordDialog(showDialog: Boolean, onDismiss: () -> Unit) {
-    if (showDialog) {
-        var newPassword by remember { mutableStateOf("") }
+fun ChangePasswordDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var showMismatchError by remember { mutableStateOf(false) }
 
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            confirmButton = {
-                TextButton(onClick = {
-                    val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-                    user?.updatePassword(newPassword)?.addOnCompleteListener {
-                        if (it.isSuccessful) {
-                            android.util.Log.d("Settings", "Password changed")
-                        }
-                    }
-                    onDismiss()
-                }) {
-                    Text("Change")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismiss) { Text("Cancel") }
-            },
-            title = { Text("Change Password") },
-            text = {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = "Change Password")
+        },
+        text = {
+            Column {
                 OutlinedTextField(
                     value = newPassword,
-                    onValueChange = { newPassword = it },
-                    label = { Text("New Password") }
+                    onValueChange = {
+                        newPassword = it
+                        showMismatchError = false
+                    },
+                    label = { Text("New Password") },
+                    visualTransformation = PasswordVisualTransformation()
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = {
+                        confirmPassword = it
+                        showMismatchError = false
+                    },
+                    label = { Text("Verify Password") },
+                    visualTransformation = PasswordVisualTransformation()
+                )
+                if (showMismatchError) {
+                    Text(
+                        text = "Passwords do not match",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
-        )
-    }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                if (newPassword == confirmPassword && newPassword.isNotBlank()) {
+                    onConfirm(newPassword)
+                } else {
+                    showMismatchError = true
+                }
+            }) {
+                Text("Change")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
+
 
 @Composable
 fun DeleteAccountDialog(showDialog: Boolean, onDismiss: () -> Unit, context: Context) {
