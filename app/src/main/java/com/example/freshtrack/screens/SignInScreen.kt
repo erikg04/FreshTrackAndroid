@@ -43,17 +43,17 @@ fun SignInScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // 🔹 Use your BackgroundImage composable
+            // uses the dark background image
             BackgroundImage(isDarkMode = isDarkMode)
 
-            // Optional overlay for contrast
+
             Box(
                 modifier = Modifier
                     .matchParentSize()
                     .background(Color.Black.copy(alpha = 0.3f))
             )
 
-            // 🔹 Foreground content (UI)
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()

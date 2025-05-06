@@ -39,7 +39,7 @@ object AuthManager {
                     val userData = mapOf(
                         "name" to name,
                         "email" to email,
-                        "allergies" to "" // default, you can allow user to edit later
+                        "allergies" to ""
                     )
 
                     db.collection("users").document(userId)

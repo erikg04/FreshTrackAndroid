@@ -27,7 +27,7 @@ data class SavedRecipe(
     val image: String = ""
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun ProfileScreen() {
     val context = LocalContext.current

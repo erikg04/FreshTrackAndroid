@@ -19,10 +19,10 @@ class OverlayView(context: Context, attrs: AttributeSet? = null) : View(context,
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        // Draw semi-transparent background
+
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), overlayPaint)
 
-        // Define the scanner rectangle
+
         val rectWidth = width * 0.8f
         val rectHeight = height * 0.25f
         val left = (width - rectWidth) / 2
@@ -30,10 +30,10 @@ class OverlayView(context: Context, attrs: AttributeSet? = null) : View(context,
         val right = left + rectWidth
         val bottom = top + rectHeight
 
-        // Clear the center rectangle area
+
         canvas.drawRect(left, top, right, bottom, clearPaint)
 
-        // Draw a static red line in the middle of the scan area
+
         val centerY = (top + bottom) / 2
 
         val redLinePaint = Paint().apply {

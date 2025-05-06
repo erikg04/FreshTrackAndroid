@@ -51,18 +51,18 @@ fun SettingsScreen(
 
 
         SettingTextItem(title = "Change Password") {
-            // Navigate to change password screen
+
         }
 
         SettingTextItem(title = "Delete Account") {
-            // Show confirmation dialog
+
         }
 
         // About Section
         Divider(Modifier.padding(vertical = 12.dp))
         Text("About", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
 
-        SettingTextItem(title = "App Version: 1.15") {}
+        SettingTextItem(title = "App Version: 1.25") {}
         SettingTextItem(title = "Send Feedback") {
             // Launch email intent
         }

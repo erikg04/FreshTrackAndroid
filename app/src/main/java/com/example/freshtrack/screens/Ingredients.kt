@@ -77,11 +77,10 @@ fun AddIngredientsScreen() {
                 key = { it }
             ) { ingredient ->
 
-                // Set up dismiss state
                 val dismissState = rememberDismissState(
                     confirmValueChange = { dismissValue ->
                         if (dismissValue == DismissValue.DismissedToStart) {
-                            ingredients = ingredients - ingredient  // Remove from local list
+                            ingredients = ingredients - ingredient
                             val userId = FirebaseAuth.getInstance().currentUser?.uid
                             if (userId != null) {
                                 val db = FirebaseFirestore.getInstance()
@@ -98,7 +97,6 @@ fun AddIngredientsScreen() {
                                         }
                                     }
 
-                                // 2. Delete from ingredients
                                 db.collection("users")
                                     .document(userId)
                                     .collection("ingredients")
@@ -137,7 +135,6 @@ fun AddIngredientsScreen() {
                         }
                     },
                     dismissContent = {
-                        // Your original card
                         ElevatedCard(modifier = Modifier.fillMaxWidth()) {
                             Text(
                                 text = ingredient,
