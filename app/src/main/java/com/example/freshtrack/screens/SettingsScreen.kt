@@ -1,6 +1,7 @@
 package com.example.freshtrack.screens
 
 import android.app.Activity
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -18,9 +19,16 @@ fun SettingsScreen(
     onThemeChange: (Boolean) -> Unit,
     isNotificationsEnabled: Boolean,
     onNotificationsToggle: (Boolean) -> Unit,
-    onLogout: () -> Unit
-    
-) {
+    onLogout: () -> Unit,
+)
+
+
+{
+    val context = LocalContext.current
+    var showPasswordDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+
     Column(modifier = Modifier
         .fillMaxSize()
         .padding(16.dp)
@@ -51,11 +59,11 @@ fun SettingsScreen(
 
 
         SettingTextItem(title = "Change Password") {
-
+            showPasswordDialog = true
         }
 
         SettingTextItem(title = "Delete Account") {
-
+            showDeleteDialog = true
         }
 
         // About Section
@@ -64,8 +72,15 @@ fun SettingsScreen(
 
         SettingTextItem(title = "App Version: 1.25") {}
         SettingTextItem(title = "Send Feedback") {
-            // Launch email intent
+            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "message/rfc822"
+                putExtra(android.content.Intent.EXTRA_EMAIL, arrayOf("erik.gonzalez.0615@gmail.com"))
+                putExtra(android.content.Intent.EXTRA_SUBJECT, "FreshTrack Feedback")
+                putExtra(android.content.Intent.EXTRA_TEXT, "Hi team, I wanted to share some feedback...")
+            }
+            context.startActivity(android.content.Intent.createChooser(intent, "Send Feedback via..."))
         }
+
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -78,6 +93,16 @@ fun SettingsScreen(
 
         }
     }
+    ChangePasswordDialog(showDialog = showPasswordDialog) {
+        showPasswordDialog = false
+    }
+
+    DeleteAccountDialog(
+        showDialog = showDeleteDialog,
+        onDismiss = { showDeleteDialog = false },
+        context = context
+    )
+
 }
 
 @Composable
@@ -115,3 +140,68 @@ fun SettingTextItem(title: String, onClick: () -> Unit) {
         )
     }
 }
+
+@Composable
+fun ChangePasswordDialog(showDialog: Boolean, onDismiss: () -> Unit) {
+    if (showDialog) {
+        var newPassword by remember { mutableStateOf("") }
+
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            confirmButton = {
+                TextButton(onClick = {
+                    val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                    user?.updatePassword(newPassword)?.addOnCompleteListener {
+                        if (it.isSuccessful) {
+                            android.util.Log.d("Settings", "Password changed")
+                        }
+                    }
+                    onDismiss()
+                }) {
+                    Text("Change")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+            },
+            title = { Text("Change Password") },
+            text = {
+                OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = { newPassword = it },
+                    label = { Text("New Password") }
+                )
+            }
+        )
+    }
+}
+
+@Composable
+fun DeleteAccountDialog(showDialog: Boolean, onDismiss: () -> Unit, context: Context) {
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            confirmButton = {
+                TextButton(onClick = {
+                    val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                    user?.delete()?.addOnCompleteListener {
+                        if (it.isSuccessful) {
+                            android.util.Log.d("Settings", "Account deleted")
+                            if (context is Activity) context.finish()
+                        }
+                    }
+                    onDismiss()
+                }) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+            },
+            title = { Text("Delete Account") },
+            text = { Text("Are you sure you want to permanently delete your account?") }
+        )
+    }
+}
+
+

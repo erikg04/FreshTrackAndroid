@@ -89,7 +89,7 @@ fun AddIngredientsScreen() {
                                 db.collection("users")
                                     .document(userId)
                                     .collection("scannedProducts")
-                                    .whereEqualTo("name", ingredient)
+                                    .whereEqualTo("name", ingredient.trim())
                                     .get()
                                     .addOnSuccessListener { result ->
                                         for (document in result) {
@@ -100,7 +100,7 @@ fun AddIngredientsScreen() {
                                 db.collection("users")
                                     .document(userId)
                                     .collection("ingredients")
-                                    .whereEqualTo("name", ingredient)
+                                    .whereEqualTo("name", ingredient.trim())
                                     .get()
                                     .addOnSuccessListener { result ->
                                         for (document in result) {
