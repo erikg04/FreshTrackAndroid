@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -118,11 +119,12 @@ fun SettingsScreen(
     }
 
 
-    DeleteAccountDialog(
-        showDialog = showDeleteDialog,
-        onDismiss = { showDeleteDialog = false },
-        context = context
-    )
+    if (showDeleteDialog) {
+        ConfirmDeleteDialog(
+            context = context,
+            onDismiss = { showDeleteDialog = false }
+        )
+    }
 
 }
 
@@ -227,31 +229,67 @@ fun ChangePasswordDialog(
 
 
 @Composable
-fun DeleteAccountDialog(showDialog: Boolean, onDismiss: () -> Unit, context: Context) {
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            confirmButton = {
-                TextButton(onClick = {
-                    val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-                    user?.delete()?.addOnCompleteListener {
-                        if (it.isSuccessful) {
-                            android.util.Log.d("Settings", "Account deleted")
-                            if (context is Activity) context.finish()
+fun ConfirmDeleteDialog(
+    context: Context,
+    onDismiss: () -> Unit
+) {
+    var password by remember { mutableStateOf("") }
+    var errorText by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Confirm Delete") },
+        text = {
+            Column {
+                Text("Please enter your password to permanently delete your account.")
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    visualTransformation = PasswordVisualTransformation()
+                )
+                if (errorText != null) {
+                    Text(text = errorText!!, color = MaterialTheme.colorScheme.error)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val user = FirebaseAuth.getInstance().currentUser
+                val email = user?.email
+
+                if (user != null && email != null && password.isNotBlank()) {
+                    val credential = EmailAuthProvider.getCredential(email, password)
+                    user.reauthenticate(credential).addOnCompleteListener { reauthTask ->
+                        if (reauthTask.isSuccessful) {
+                            user.delete().addOnCompleteListener { deleteTask ->
+                                if (deleteTask.isSuccessful) {
+                                    Toast.makeText(context, "Account deleted", Toast.LENGTH_SHORT).show()
+                                    if (context is Activity) context.finish()
+                                } else {
+                                    errorText = "Delete failed: ${deleteTask.exception?.message}"
+                                }
+                            }
+                        } else {
+                            errorText = "Incorrect password. Try again."
                         }
                     }
-                    onDismiss()
-                }) {
-                    Text("Delete")
+                } else {
+                    errorText = "Password cannot be empty."
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismiss) { Text("Cancel") }
-            },
-            title = { Text("Delete Account") },
-            text = { Text("Are you sure you want to permanently delete your account?") }
-        )
-    }
+            }) {
+                Text("Delete")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
+
+
+
 
 
